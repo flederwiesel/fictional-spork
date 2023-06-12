@@ -15,11 +15,14 @@ jobs:
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
-      - name: Run pytest
+      - name: Setup environment
         run: |
             python3 -m venv .venv
             source .venv/bin/activate
             python -m pip install --upgrade pip
             python -m pip install pytest
-            python -m pytest
+      - name: Run pytest
+        run: |
+            source .venv/bin/activate
+            .venv/bin/python -m pytest
       - run: echo "🍏 This job's status is ${{ job.status }}."

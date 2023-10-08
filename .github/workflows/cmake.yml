@@ -1,0 +1,24 @@
+name: build
+
+on:
+  pull_request:
+  push:
+    branches:
+    - 'master'
+    - 'feature/**'
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+jobs:
+  build:
+    name: cmake configure & build
+    # See https://github.com/actions/runner-images/blob/main/images/win/Windows2022-Readme.md
+    # for wha is inside "windows-latest"
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Configure
+      run: cmake -B"${{ runner.workspace }}/b" -G"Visual Studio 17 2022"
+    - name: Build
+      run: cmake --build '${{ runner.workspace }}/b'

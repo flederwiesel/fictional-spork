@@ -2,6 +2,7 @@ name: service-container-job
 
 run-name: run scripts requiring a container running in the background
 
+# https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows
 on:
   pull_request:
   push:
@@ -13,10 +14,17 @@ on:
 permissions:
   contents: read # to fetch code (actions/checkout)
 
+env:
+  MARIADB_ROOT_PASSWORD: 123456
+  MARIADB_USER: spork
+  MARIADB_PASSWORD: 123456
+  MARIADB_DATABASE: fictional
+
 jobs:
   container-test-job:
     runs-on: ubuntu-latest
 
+    # https://docs.github.com/en/actions/using-containerized-services/about-service-containers
     services:
       php-apache:
         image: php:7.4.33-apache
@@ -28,9 +36,30 @@ jobs:
           - ${{ github.workspace }}:/var/www/html
         options: --cpus 1
 
+      mariadb:
+        image: mariadb:latest
+        env:
+          # https://hub.docker.com/_/mariadb/
+          # https://mariadb.com/kb/en/mariadb-server-docker-official-image-environment-variables/
+          MARIADB_ROOT_PASSWORD: ${{env.MARIADB_ROOT_PASSWORD}}
+          MARIADB_USER: ${{env.MARIADB_USER}}
+          MARIADB_PASSWORD: ${{env.MARIADB_PASSWORD}}
+          MARIADB_DATABASE: ${{env.MARIADB_DATABASE}}
+        ports:
+          - "3306:3306"
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: http-connect
         run: |
-          curl http://localhost/phpinfo.php
+          curl "http://localhost/phpinfo.php"
+      - name: mysql-connect
+        run: |
+          mysql --host 127.0.0.1 -uroot -p${{env.MARIADB_ROOT_PASSWORD}} -e "SHOW DATABASES;"
+          mysql --host 127.0.0.1 -u${{env.MARIADB_USER}} -p${{env.MARIADB_PASSWORD}} -e "SHOW DATABASES;"

@@ -1,0 +1,36 @@
+name: service-container-job
+
+run-name: run scripts requiring a container running in the background
+
+on:
+  pull_request:
+  push:
+    branches:
+    - bug/**
+    - feature/**
+    - master
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+jobs:
+  container-test-job:
+    runs-on: ubuntu-latest
+
+    services:
+      php-apache:
+        image: php:7.4.33-apache
+        env:
+          APACHE_DOCUMENT_ROOT: ${APACHE_DOCUMENT_ROOT-/var/www/html}
+        ports:
+          - 80:80
+        volumes:
+          - ${{ github.workspace }}:/var/www/html
+        options: --cpus 1
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: http-connect
+        run: |
+          curl http://localhost/phpinfo.php
